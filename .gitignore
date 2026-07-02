@@ -28,7 +28,7 @@ LocalPreferences.toml
 JuliaLocalPreferences.toml
 
 # Ignore images created locally (they can be very large)
-*.png
+# *.png
 *.jpg
 *.pdf
 *.svg
