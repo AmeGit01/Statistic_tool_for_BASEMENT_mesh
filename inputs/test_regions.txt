@@ -1,0 +1,4 @@
+matID, y_log_scale
+6, 0
+13, 1
+30, 0
