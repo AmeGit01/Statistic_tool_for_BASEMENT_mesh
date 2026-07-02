@@ -214,7 +214,7 @@ end
 
 #
 if length(ARGS) < 4
-	error("Select an input file typing: julia --project=@. mesh_stats.jl input_file.csv MatIDFile.txt FigureFormat BASEMD/BASEHPC \n")
+	error("Select an input file typing: julia --project=@. source/mesh_stats.jl input_file.csv MatIDFile.txt FigureFormat BASEMD/BASEHPC \n")
 end # =#
 
 plot_stats(Base.ARGS)
