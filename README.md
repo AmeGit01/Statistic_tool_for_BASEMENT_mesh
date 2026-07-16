@@ -1,4 +1,4 @@
-# BASE_mesh_statistics_tool
+# Statistics tool for BASEMENT mesh
 Compute quality statistics for any 2D mesh
 
 This tool was developed by Amedeo Repele. For any bugs in the code or requests for information, please send a message to _amedeo.repele@unitn.it_.  
