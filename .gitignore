@@ -32,3 +32,6 @@ JuliaLocalPreferences.toml
 *.jpg
 *.pdf
 *.svg
+
+# Ignore file during app development
+mesh_stats_tool/

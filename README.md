@@ -4,15 +4,30 @@ Compute quality statistics for any 2D mesh
 This tool was developed by Amedeo Repele. For any bugs in the code or requests for information, please send a message to _amedeo.repele@unitn.it_.  
 The BASE_mesh_statistics_tool is a Julia script that computes quality metrics for any 2D mesh for hydrodynamical simulation purposes. It was originally developed to work with BASEMENT 2D meshes [(BASEMENT website)](https://basement.ethz.ch/), but it does not require any BASEMENT-specific features, thanks to the very general framework of BASEMENT itself. The complete list of tools (Python scripts) developed by the BASEMENT group at ETH Zurich can be found at the following link: [BASEtools](https://basement.ethz.ch/download/tools/python-scripts.html). However, I did not find any tool that performs the same tasks as this Julia script.
 
+The tool is completely written in Julia programming language, but it is actually suitable for all users, even for how has really 0 Julia knowledge. In fact, two versions of the tool are available, the script (for Julia users, but not only) and the app (for ALL users). Remember that the script also is developed to be used for non-Julia users, thus, following the simple instructions below, any user can use it. Moreover, the app present restrictions depending on the adopted OS, and its proper functionalities are not guaranteed, but they are for the script instead.  
+
+Indipendently from which version you are using, the folders ````figures```` and ````reports```` must be pre-set, in which the outputs will be saved, and also a folder named ````inputs```` is suggested for organization purposes.
+
+
+## All users
+
+Into the folder ````apps```` are contained a list of zip file, which contains the app version of this tool, depending on the OS installed in the coputer. Using the app is very straightforward, it is enough to open a terminal on the folder where mesh_stats_tool is located, and type the expression based on the version. The available versions are:
+
+- mst_ubuntu: compiled and tested under Linux Ubuntu GNOME 26.04 long term distribution, it should also work on all the distros based on Debian/Ubuntu packages;  
+````
+./mesh_stats_tool/bin/mesh_stats input_file.csv MatIDfile.txt BASEflow FigureFormat 
+````
+ 
+
+## Julia users
+
 No knowledge of the Julia programming language is required. Simply download the complete repository and use the tool. Everything the user needs is:
 - Julia installed (this tool was developed using Julia version 1.12.6). Refer to [Installing Julia](https://julialang.org/downloads/) if it is not already installed;
-- The folders ``figures`` and ``reports`` already initialized (this is done by default when downloading the repository);
-- **Optional 1**: The ``inputs`` folder is recommended for better organization of the repository;
-- **Optional 2**: It is strongly recommended to add an environment variable to avoid manually activating the project every time the user runs the ``mesh_stats.jl`` script.
+- **Optional**: It is strongly recommended to add an environment variable to avoid manually activating the project every time the user runs the ``mesh_stats.jl`` script.
 
-## Optional 2
+### Optional
 
-### Windows OS
+#### Windows OS
 1. Press the **Windows key** and type **"environment variables"**, then press Enter;
 2. Click the **Environment Variables...** button at the bottom right;
 3. In the **User variables** section (the top one), click **New...**;
@@ -21,15 +36,15 @@ No knowledge of the Julia programming language is required. Simply download the 
     - **Variable value**: ``@.``;
 5. Click **OK** on all windows to save and apply the changes.
 
-### Linux OS
+#### Linux OS
 1. Locate the configuration file (``~/.bashrc`` or ``~/.zshrc``);
 2. Add the following line at the end of the file: ``export JULIA_PROJECT="@."``;
 3. Save the file and refresh the terminal.
 
 This tells Julia to look for a project and automatically activate it when one is found while launching ``julia`` from the terminal.  
-If you choose not to set **Optional 2**, remember to always type ``julia --project=@.`` instead of simply typing ``julia``.
+If you choose not to set **Optional**, remember to always type ``julia --project=@.`` instead of simply typing ``julia``.
 
-## Arguments
+### Arguments
 
 The ``mesh_stats.jl`` Julia script requires the following arguments:
 
@@ -49,13 +64,13 @@ The ``mesh_stats.jl`` Julia script requires the following arguments:
 
 4.  ``FigureFormat``: this allows the user to specify the format of the output figures. Accepted values are ``png``, ``jpg``, ``pdf``, and ``svg``. Do **not** include the dot. For example, ``pdf`` is correct, while ``.pdf`` is not;
 
-## Running mesh_stats.jl
+### Running mesh_stats.jl
 
-Read **Optional 2** first.
+Read **Optional** first.
 
 To run the ``mesh_stats.jl`` script, open a terminal, navigate to the repository using the ``cd`` command, and then proceed as follows.
 
-### First run (or whenever Julia indicates it is needed)
+#### First run (or whenever Julia indicates it is needed)
 
 Start a Julia REPL by typing:
 
@@ -65,7 +80,7 @@ julia
 
 The REPL has the following layout:
 
-![Julia layout](source/julia_layout.png)
+![Julia layout](src/julia_layout.png)
 
 Then enter package mode by pressing the ``]`` key and run:
 ````
@@ -76,7 +91,7 @@ A ``Manifest.toml`` file should now be created in the project folder. This file 
 
 You can now follow the instructions below.
 
-### From the second run onward
+#### From the second run onward
 
 Run the following command from the terminal:
 ````
@@ -95,9 +110,9 @@ julia source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC 
 
 If everything has been set up correctly, the terminal should display the following:
 
-![terminal output](source/terminal_output.png)
+![terminal output](src/terminal_output.png)
 
-## Outputs
+### Outputs
 
 The tool produces three output files: two graphical outputs and one quantitative report.
 
@@ -107,7 +122,7 @@ The tool produces three output files: two graphical outputs and one quantitative
 
 3. Report_input_file.txt: this report provides, for both datasets and for each material ID, the number of cells below each quantile together with their cell IDs. This allows the user to easily identify the smallest cells and the potential computational bottlenecks.
 
-## Performance tips
+### Performance tips
 
 The code has a relatively high **compilation overhead**, which is generally not an issue if the script is executed only a few times. This happens because Julia must be relaunched every time the script is executed. To avoid this overhead, the user can use Julia's *Daemon Mode*, which compiles the script only once (during the first execution) and then reuses the compiled version while allowing different input files.
 

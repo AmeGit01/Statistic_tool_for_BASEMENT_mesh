@@ -1,93 +1,10 @@
-using Printf, Plots, Plots.Measures, DelimitedFiles, Infiltrator
+using Printf, Plots, Plots.Measures, DelimitedFiles
 using StatsPlots, Statistics, StatsBase
-using OrderedCollections, Colors, DaemonMode
+using OrderedCollections, Colors
+using Infiltrator, DaemonMode
 
-
-function plot_histogram(data, materials, title, xlabel, quantile_intervals, i, matIDs, color, ylogScale; quantiles_flag = false)
-
-	quantiles1 = 0
-	qlabel1 = string(quantile_intervals[1]*100); qlabel1 = qlabel1 * "%"
-	qlabel2 = string(quantile_intervals[2]*100); qlabel2 = qlabel2 * "%"
-	qlabel3 = string(quantile_intervals[3]*100); qlabel3 = qlabel3 * "%"
-	qlabel4 = string(quantile_intervals[4]*100); qlabel4 = qlabel4 * "%"
-
-	# 1
-	xmin = minimum(data[materials[matIDs[i]]])
-	xmax = maximum(data[materials[matIDs[i]]])
-	xticks = round.(collect(range(xmin, xmax, length=10)), digits=4)
-	splt11 = histogram(
-	    data[materials[matIDs[i]]],
-	    bins=50,
-	    xlabel=xlabel,
-	    ylabel="Numero di celle",
-	    # title=title,
-		color=color,
-		label="matID $(matIDs[i])",
-		xticks=xticks,
-		yscale = ylogScale[i] ? :log10 : :identity
-	)
-	@printf("    minimum data at matID %d is %.4f \n", matIDs[i], minimum(data[materials[matIDs[i]]]))
-	if i == 1
-		splt11 = plot!(splt11; title=title)
-	end
-
-	if quantiles_flag
-		quantiles1 = quantile(data[materials[matIDs[i]]], quantile_intervals)
-		splt11 = vline!([quantiles1[1], quantiles1[1]], label=qlabel1)
-		splt11 = vline!([quantiles1[2], quantiles1[2]], label=qlabel2)
-		splt11 = vline!([quantiles1[3], quantiles1[2]], label=qlabel3)
-		splt11 = vline!([quantiles1[4], quantiles1[4]], label=qlabel4)
-	end
-
-	return splt11, quantiles1
-end
-# 	write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize)
-
-function write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, matIDs, area, chrsize)
-
-	open(ReportFileName, "w") do io
-		println(io, "QUANTILE REPORT for $(FileName)")
-		println(io, "BASEMENT type: $(BASEflow) \n")
-		println(io, "="^40)
-		# in this case quantiles contains all the quantiles for all the data, 
-		# its length is not known a priori, so I need to ckeck it first 
-		# quantiles = Array[4, nID, 2] (Array[nquantiles, nregions, ndata])
-
-		nID = length(matIDs)
-		nq = length(quantiles_intervals[:, 1])
-		Names = BASEflow == "BASEMD" ? ["Area", "Minimum length"] : ["Area", "Inscribed circle's radius"]
-		variables = Array{Float64}(undef, length(area), 2)
-		variables[:, 1] = area
-		variables[:, 2] = chrsize
-		
-
-		for j ∈ 1:2		# loop over the variables' name
-			for n ∈ 1:nID		# loop over the matIDs
-
-				println(io, "\n$(Names[j]), matID $(matIDs[n])")
-				
-				# quantiles[:, n, j]:  quantiles_intervals[:, j], matIDs[n], Names[j]
-				# q_percentage = quantiles_intervals[:, j] * 100		# ex. [0.1, 1.0, 5.0, 10.0]
-				
-				for i ∈ 1:nq		# loop over the quantiles
-					q_percentage = quantiles_intervals[i, j] * 100
-
-					# quantiles[i, n, j]:  quantiles_intervals[i, j], matIDs[n], Names[j]
-					q = quantiles[i, n, j]
-
-					println(io, "	\nQuantile: $(q_percentage) % ($(round(q, digits=4)) m^2)")
-					idx = findall(x -> x < q, variables[materials[matIDs[n]] , 1] ) # area[materials[idmat]]
-					println(io, "	Cells below quantile: $(length(idx))")
-					println(io, "	Indices: $(idx)")
-				end		# loop over the quantiles
-			end		# loop over the matIDs
-		end		# loop over the variables' name
-	end # closing file
-
-	@printf("\nReport printed to file %s\n", ReportFileName)
-
-	return nothing
-end
+include("Statistic_tool_for_BASEMENT_mesh.jl")
+import .Statistic_tool_for_BASEMENT_mesh as mdl
 
 function plot_stats(args)
 
@@ -192,7 +109,7 @@ function plot_stats(args)
 	quantiles_intervals[:, 1] .= [0.001, 0.01, 0.05, 0.1]	# USED DEFINED, ACCORDIG TO nquantiles
 
 	for i ∈ 1:nID
-		plt_tmp, q1 = plot_histogram(area, materials, title, xlabel, quantiles_intervals[:, 1], i, UseRegions, colors[i], ylogScale; quantiles_flag = true)
+		plt_tmp, q1 = mdl.plot_histogram(area, materials, title, xlabel, quantiles_intervals[:, 1], i, UseRegions, colors[i], ylogScale; quantiles_flag = true)
 		plts[i, 1] = plt_tmp
 		quantiles[:, i, 1] = q1
 	end
@@ -227,7 +144,7 @@ function plot_stats(args)
 	quantiles_intervals[:, 2] = [0.001, 0.01, 0.05, 0.1]	# USED DEFINED, ACCORDIG TO nquantiles	
 
 	for i ∈ 1:nID
-		plt_tmp, q2 = plot_histogram(chrsize, materials, title, xlabel, quantiles_intervals[:, 2], i, UseRegions, colors[i], ylogScale; quantiles_flag = true)
+		plt_tmp, q2 = mdl.plot_histogram(chrsize, materials, title, xlabel, quantiles_intervals[:, 2], i, UseRegions, colors[i], ylogScale; quantiles_flag = true)
 		plts[i, 2] = plt_tmp
 		quantiles[:, i, 2] = q2
 		# @show q1
@@ -243,14 +160,14 @@ function plot_stats(args)
 	dosave && @printf("Characteristic length plot saved to file %s\n", OutputName)
 
 	# build the report
-	dosave && write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize)
+	dosave && mdl.write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize)
 
 	return nothing
 end
 
 #
-if length(ARGS) < 4
-	error("Select an input file typing: julia --project=@. source/mesh_stats.jl input_file.csv MatIDFile.txt BASEMD/BASEHPC FigureFormat \n")
+if length(Base.ARGS) < 4
+	error("Select an input file typing: julia src/mesh_stats.jl inputs/InputFile.csv inputs/RegionsFile.txt BASEMD/BASEHPC FigureFormat \n")
 end # =#
 
 plot_stats(Base.ARGS)
