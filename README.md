@@ -33,19 +33,15 @@ If you choose not to set **Optional 2**, remember to always type ``julia --proje
 
 The ``mesh_stats.jl`` Julia script requires the following arguments:
 
-1. ``input_file.csv``: this file contains the mesh information and must include the following columns (although some of them are currently not used):
-	1.	cell ID
-	2.	material ID
-	3.	Bed elevation
-	4.	Cell area
-	5.	cell minimum edge length (CFL reference length for BASEMD)
-	6.	cell maximum edge length
-	7.	aspect ratio = minimum edge length / maximum edge length (cell regularity parameter)
-	8.	cell minimum angle (cell regularity parameter)
-	9.	cell perimeter
-	10.	radius of the inscribed circle (CFL reference length for BASEHPC)
+1. ``input_file.csv``: this file contains the mesh information and must include the following columns:
+	1.	fid: cell id within the mesh
+	2.	matid: material id of the cell
+	3.	area: area of the cell
+	4.	min_len: minimum length of each cell (CFL reference length for BASEMD)
+	5.	ins_rad: radius of the inscribed circle for each mesh (CFL reference length for BASEHPC)
 
-    At the moment, only columns 4 and 5 (or 10) are plotted, although columns 1 and 2 are also used. The column names do not matter, but their order does. By editing the ``mesh_stats.jl`` file, the user can also enable plotting of columns 7 and 8 (for Julia users only);
+    The order of the columns is not importat, but the name do! Other additional columns can be present with any name, it will not be a problem. The only restriction is that the five columns above have the correct name.  
+	Colums can be obtained using QGIS, for a complete tutorial on how to get them see 
 
 2. ``MatIDfile.txt``: this file contains the list of the material IDs (matIDs) for which the user wants to plot statistics. It also allows the user to specify whether a logarithmic (base 10) scale should be used for the vertical axis of each subplot to improve the visualization of the Area and Characteristic Size distributions;
 

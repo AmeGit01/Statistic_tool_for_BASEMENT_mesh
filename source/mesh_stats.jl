@@ -96,14 +96,28 @@ function plot_stats(args)
 	RegionsFile = args[2]
 	OutputFormat = args[3]
 	BASEflow = args[4]
+	dosave = true
+	dodisplay = false
 	# =#
 
 	#= testing
-	InputFile = "meshes/Brenta_mesh.csv"
-	RegionsFile = "meshes/Brenta_regions.txt"
+	InputFile = "inputs/test_mesh.csv"
+	RegionsFile = "inputs/test_regions.txt"
 	BASEflow = "BASEHPC"
 	OutputFormat = "pdf"
+	dosave = false
+	dodisplay = true
 	# =#
+
+	#=		
+	Idea: make the order of the coluns useless, but the name.
+	Names to be used (all small letters):
+	- [1]: fid
+	- [2]: matid
+	- [4]: area
+	- [5]: min_len
+	- [10]: ins_rad
+	=#
 
 	# read files and set-up outputs names
 	@printf("Reading input file: %s \n", InputFile)
@@ -116,17 +130,37 @@ function plot_stats(args)
 	last = collect(findlast(".", FileName))
 	FileNameNoFormat = FileName[begin:last[begin]-1]	
 
-	UseRegionsFile, fields = readdlm(RegionsFile, ',', header=true)
+	UseRegionsFile, fields_FegionsFile = readdlm(RegionsFile, ',', header=true)
 	UseRegions = Int64.(UseRegionsFile[:, 1])
 	ylogScale = Bool.(UseRegionsFile[:, 2])
 
 	ReportFileName = "reports/Report_$(FileNameNoFormat).txt"
 	# ReportFileName = "reports/report_PROVA.txt"
 	
+	# Find all the position of the colums to be used
+	positions = zeros(Int64, 5)
+	@infiltrate false
+	idx = findfirst(==( "fid" ), fields)
+	!isnothing(idx) && (positions[1] = idx[2])
+	idx = findfirst(==( "matid" ), fields)
+	!isnothing(idx) && (positions[2] = idx[2])
+	idx = findfirst(==( "area" ), fields)
+	!isnothing(idx) && (positions[3] = idx[2])
+	idx = findfirst(==( "min_len" ), fields)
+	!isnothing(idx) && (positions[4] = idx[2])
+	idx = findfirst(==( "ins_rad" ), fields)
+	!isnothing(idx) && (positions[5] = idx[2])
+
+	if any(iszero, positions) 
+		@printf("\nSome of the required fields are missing in the input file %s. Please check the column names. \n", InputFile)
+		@printf("The correct names that are required are: fid, matid, area, min_len, ins_rad \nAny additional (support) column can be present without any issue. \n")
+		return
+	end
+
 	# create filters by region type
-	ndata = length(data[:,1])
+	ndata = length(data[:,positions[1]])
 	material_id = Array{Int64}(undef, ndata)
-	material_id .= data[:,2] # data[:,3]
+	material_id .= data[:,positions[2]]
 
 	materials_all = Dict( i => findall(==(i), material_id) for i ∈ unique(material_id) )
 
@@ -150,7 +184,7 @@ function plot_stats(args)
 
 	## Plot area distributions
 	@printf("\nBuilding area distribution plots... \n")
-	area = data[:,4] # data[:,5]
+	area = data[:,positions[3]]
 	title = "Distribuzione Aree - $(FileName)"
 	xlabel = "Area cella [m^2]"
 	OutputName = "figures/Area_$(FileNameNoFormat).$(OutputFormat)"
@@ -168,20 +202,21 @@ function plot_stats(args)
 		left_margin=5mm, bottom_margin=5mm,
 		size=(1000, ydimension)
 	)
-	# display(plt1)
-	savefig(plt1, OutputName)
-	@printf("Area plot saved to file %s\n", OutputName)
+	dodisplay && display(plt1)
+
+	dosave && savefig(plt1, OutputName)
+	dosave && @printf("Area plot saved to file %s\n", OutputName)
 
 	# "figures/prova.png"
 
 	# Plot controlling dimension 
 	@printf("\nBuilding characteristic length distribution plots... \n")
 	if BASEflow == "BASEMD"
-		chrsize = data[:,5] # data[:,6]
+		chrsize = data[:,positions[4]]
 		title = "Minimum cell size - $(FileName)"
 		xlabel = "edge length [m]"
 	elseif BASEflow == "BASEHPC"
-		chrsize = data[:,10] # data[:,11]
+		chrsize = data[:, positions[5]]
 		title = "Inscribed circle's radius - $(FileName)"
 		xlabel = "radius [m]"
 	else
@@ -202,12 +237,13 @@ function plot_stats(args)
 		left_margin=5mm, bottom_margin=5mm,
 		size=(1000, ydimension)
 	)
-	# display(plt2)
-	savefig(plt2, OutputName) # =#
-	@printf("Characteristic length plot saved to file %s\n", OutputName)
+	dodisplay && display(plt2)
+
+	dosave && savefig(plt2, OutputName) # =#
+	dosave && @printf("Characteristic length plot saved to file %s\n", OutputName)
 
 	# build the report
-	write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize)
+	dosave && write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize)
 
 	return nothing
 end
@@ -218,268 +254,3 @@ if length(ARGS) < 4
 end # =#
 
 plot_stats(Base.ARGS)
-
-
-#= Unused functions (probably they show errors on arguments)
-function plot_histograms(data, materials, title, xlabel, quantile_intervals, OutputName; quantiles_flag = false)
-	quantiles1 = quantiles2 = quantiles3 = 0
-	qlabel1 = string(quantile_intervals[1]*100); qlabel1 = qlabel1 * "%"
-	qlabel2 = string(quantile_intervals[2]*100); qlabel2 = qlabel2 * "%"
-	qlabel3 = string(quantile_intervals[3]*100); qlabel3 = qlabel3 * "%"
-	qlabel4 = string(quantile_intervals[4]*100); qlabel4 = qlabel4 * "%"
-
-	# 1
-	xmin = minimum(data[materials[1]])
-	xmax = maximum(data[materials[1]])
-	xticks = round.(collect(range(xmin, xmax, length=10)), digits=4)
-	splt11 = histogram(
-	    data[materials[1]],
-	    bins=50,
-	    xlabel=xlabel,
-	    ylabel="Numero di celle",
-	    title=title, # "Distribuzione delle aree, $(InputFile)",
-		label="matID 1",
-		xticks=xticks
-	)
-	if quantiles_flag
-		quantiles1 = quantile(data[materials[1]], quantile_intervals)
-		splt11 = vline!([quantiles1[1], quantiles1[1]], label=qlabel1)
-		splt11 = vline!([quantiles1[2], quantiles1[2]], label=qlabel2)
-		splt11 = vline!([quantiles1[3], quantiles1[2]], label=qlabel3)
-		splt11 = vline!([quantiles1[4], quantiles1[4]], label=qlabel4)
-	end
-
-	# 2
-	xmin = minimum(data[materials[2]])
-	xmax = maximum(data[materials[2]])
-	xticks = round.(collect(range(xmin, xmax, length=10)), digits=4)
-	splt12 = histogram(
-	    data[materials[2]],
-	    bins=50,
-	    xlabel=xlabel,
-	    ylabel="Numero di celle",
-		label="matID 2",
-		color=:green,
-		xticks=xticks
-	)
-	
-	# minval = argmin(data[materials[2]])
-	# splt12 = annotate!(xmin, 50, minval)
-	if quantiles_flag
-		quantiles2 = quantile(data[materials[2]], quantile_intervals)
-		splt12 = vline!([quantiles2[1], quantiles2[1]], label=qlabel1)
-		splt12 = vline!([quantiles2[2], quantiles2[2]], label=qlabel2)
-		splt12 = vline!([quantiles2[3], quantiles2[2]], label=qlabel3)
-		splt12 = vline!([quantiles2[4], quantiles2[4]], label=qlabel4)
-	end
-
-	# 3
-	xmin = minimum(data[materials[3]])
-	xmax = maximum(data[materials[3]])
-	xticks = round.(collect(range(xmin, xmax, length=10)), digits=4)
-	splt13 = histogram(
-	    data[materials[3]],
-	    bins=50,
-	    xlabel=xlabel,
-	    ylabel="Numero di celle",
-		label="matID 3",
-		xticks=xticks,
-		color=:red		
-	)
-	if quantiles_flag
-		quantiles3 = quantile(data[materials[3]], quantile_intervals)
-		splt13 = vline!([quantiles3[1], quantiles3[1]], label=qlabel1)
-		splt13 = vline!([quantiles3[2], quantiles3[2]], label=qlabel2)
-		splt13 = vline!([quantiles3[3], quantiles3[2]], label=qlabel3)
-		splt13 = vline!([quantiles3[4], quantiles3[4]], label=qlabel4)
-	end
-
- 
-	# overall
-	# custom_layout = @layout[
-	# 	grid(1,2){0.5h}
-	# 	splt13
-	# ]
-	plt1 = plot(
-		splt11, splt12, splt13; 
-		layout=(3,1), size=(1000, 1000),
-		left_margin=5mm, bottom_margin=5mm,
-	)
-	display(plt1)
-	# savefig(plt1, OutputName)
-
-	return quantiles1, quantiles2, quantiles3
-end
-
-function write_report_3(ReportFileName, FileName, BASEflow, q1, q2, materials, area, chrsize)
-
-	open(ReportFileName, "w") do io
-		println(io, "QUANTILE REPORT for $(FileName)")
-		println(io, "BASEMENT type: $(BASEflow) \n")
-		println(io, "="^40)
-		# to be printed: q1, q2
-		# each q contains 3 sets of quantiles (one for each matID)
-		
-		# q1[1]: Area, matID 1, [0.1%, 1.0%, 5.0%, 10.0%]
-		q_percentage = [0.1, 1.0, 5.0, 10.0]
-		idmat = 1
-		println(io, "\nArea, matID $(idmat)")
-		qi = 0
-		for q ∈ q1[idmat]
-			qi += 1
-			println(io, "	\nQuantile: $(q_percentage[qi]) % ($(round(q, digits=4)) m^2)")
-			idx = findall(x -> x < q, area[materials[idmat]])
-			println(io, "	Cells below quantile: $(length(idx))")
-			println(io, "	Indices: $(idx)")
-		end
-
-		# q1[2]: Area, matID 2, [0.1%, 1.0%, 5.0%, 10.0%]
-		q_percentage = [0.1, 1.0, 5.0, 10.0]
-		idmat = 2
-		println(io, "\nArea, matID $(idmat)")
-		qi = 0
-		for q ∈ q1[idmat]
-			qi += 1
-			println(io, "	\nQuantile: $(q_percentage[qi]) % ($(round(q, digits=4)) m^2)")
-			idx = findall(x -> x < q, area[materials[idmat]])
-			println(io, "	Cells below quantile: $(length(idx))")
-			println(io, "	Indices: $(idx)")
-		end
-
-		# q1[3]: Area, matID 3, [0.1%, 1.0%, 5.0%, 10.0%]
-		q_percentage = [0.1, 1.0, 5.0, 10.0]
-		idmat = 3
-		println(io, "\nArea, matID $(idmat)")
-		qi = 0
-		for q ∈ q1[idmat]
-			qi += 1
-			println(io, "	\nQuantile: $(q_percentage[qi]) % ($(round(q, digits=4)) m^2)")
-			idx = findall(x -> x < q, area[materials[idmat]])
-			println(io, "	Cells below quantile: $(length(idx))")
-			println(io, "	Indices: $(idx)")
-		end
-		
-		# q2[1]: Characteristic length, matID 1, [0.1%, 1.0%, 5.0%, 10.0%]
-		q_percentage = [0.1, 1.0, 5.0, 10.0]
-		idmat = 1
-		println(io, "\nCharacteristic length, matID $(idmat)")
-		qi = 0
-		for q ∈ q2[idmat]
-			qi += 1
-			println(io, "	\nQuantile: $(q_percentage[qi]) % ($(round(q, digits=4)) m^2)")
-			idx = findall(x -> x < q, chrsize[materials[idmat]])
-			println(io, "	Cells below quantile: $(length(idx))")
-			println(io, "	Indices: $(idx)")
-		end
-
-		# q2[2]: Characteristic length, matID 2, [0.1%, 1.0%, 5.0%, 10.0%]
-		q_percentage = [0.1, 1.0, 5.0, 10.0]
-		idmat = 2
-		println(io, "\nCharacteristic length, matID $(idmat)")
-		qi = 0
-		for q ∈ q2[idmat]
-			qi += 1
-			println(io, "	\nQuantile: $(q_percentage[qi]) % ($(round(q, digits=4)) m^2)")
-			idx = findall(x -> x < q, chrsize[materials[idmat]])
-			println(io, "	Cells below quantile: $(length(idx))")
-			println(io, "	Indices: $(idx)")
-		end
-
-		# q2[3]: Characteristic length, matID 3, [0.1%, 1.0%, 5.0%, 10.0%]
-		q_percentage = [0.1, 1.0, 5.0, 10.0]
-		idmat = 2
-		println(io, "\nCharacteristic length, matID $(idmat)")
-		qi = 0
-		for q ∈ q2[idmat]
-			qi += 1
-			println(io, "	\nQuantile: $(q_percentage[qi]) % ($(round(q, digits=4)) m^2)")
-			idx = findall(x -> x < q, chrsize[materials[idmat]])
-			println(io, "	Cells below quantile: $(length(idx))")
-			println(io, "	Indices: $(idx)")
-		end
-	end
-
-	return nothing
-end
-
-function plot_stats_3(args)
-
-	#
-	InputFile = args[1] 
-	BASEflow = args[2]
-	# =#
-
-	#= testing
-	InputFile = "meshes/Brenta_mesh.csv"
-	BASEflow = "BASEHPC"
-	# =
-
-	@printf("Reading input file: %s \n", InputFile)
-	data, fields = readdlm(InputFile, ',', header=true) # '\t'
-
-	# Extract FileName
-	last = collect(findlast("/", InputFile))
-	FileName = InputFile[last[begin]+1:end]
-
-	last = collect(findlast(".", FileName))
-	FileNameNoFormat = FileName[begin:last[begin]]	
-
-	ReportFileName = "reports/report_$(FileNameNoFormat).txt"
-	
-	# create filters by region type
-	ndata = length(data[:,1])
-	material_id = Array{Int64}(undef, ndata)
-	material_id .= data[:,2] # data[:,3]
-
-	materials = Dict( i => findall(==(i), material_id) for i ∈ unique(material_id) )
-
-	# Plot area distributions
-	@printf("Building area distribution plots... \n")
-	area = data[:,4] # data[:,5]
-	title = "Distribuzione Aree - $(FileName)"
-	xlabel = "Area cella [m^2]"
-	quantile_intervals = [0.001, 0.01, 0.05, 0.1]
-	OutputName = "figures/Area_$(FileNameNoFormat).png"
-	q1 = plot_histograms(area, materials, title, xlabel, quantile_intervals, OutputName; quantiles_flag = true)
-
-	# Plot controlling dimension 
-	@printf("Characteristic size distribution plots... \n")
-	if BASEflow == "BASEMD"
-		chrsize = data[:,5] # data[:,6]
-		title = "Minimum cell size - $(FileName)"
-		xlabel = "edge length [m]"
-	elseif BASEflow == "BASEHPC"
-		chrsize = data[:,10] # data[:,11]
-		title = "Inscribed circle's radius - $(FileName)"
-		xlabel = "radius [m]"
-	else
-		error("BASEflow not defined, select BASEMD or BASEHPC")
-	end
-	quantile_intervals = [0.001, 0.01, 0.05, 0.1]
-	OutputName = "figures/Char_length_$(FileNameNoFormat).png"
-	q2 = plot_histograms(chrsize, materials, title, xlabel, quantile_intervals, OutputName; quantiles_flag = true)
-	
-	# Plot aspect ratio distributions
-	@printf("Building aspect ratio distribution plots... \n")
-	aspect = data[:,7] # data[:,8]
-	title = "Distribuzione aspect ratio - $(FileName)"
-	xlabel = "min/max [m/m]"
-	OutputName = "figures/Aspect_ratio_$(FileNameNoFormat).png"
-	plot_histograms(aspect, materials, title, xlabel, quantile_intervals, OutputName)
-	
-	# Plot minimum angle distributions
-	@printf("Building minimum angle distribution plots... \n")
-	angle = data[:,8] # data[:,9]
-	title = "Distribuzione angolo minimo - $(FileName)"
-	xlabel = "gradi sessaggesimali [°]"
-	OutputName = "figures/Min_angle_$(FileNameNoFormat).png"
-	plot_histograms(angle, materials, title, xlabel, quantile_intervals, OutputName)
-	
-	# = 
-
-	# build the report
-	write_report_3(ReportFileName, FileName, BASEflow, q1, q2, materials, area, chrsize)
-
-	return nothing
-end
-# =#
