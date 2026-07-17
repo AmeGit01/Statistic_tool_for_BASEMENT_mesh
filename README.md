@@ -8,8 +8,39 @@ The tool is completely written in Julia programming language, but it is actually
 
 Indipendently from which version you are using, the folders ````figures```` and ````reports```` must be pre-set, in which the outputs will be saved, and also a folder named ````inputs```` is suggested for organization purposes.
 
+## Arguments
 
-## All users
+The Julia script or the app equivalently require the following arguments:
+
+1. ``input_file.csv``: this file contains the mesh information and must include the following columns:
+	1.	fid: cell id within the mesh
+	2.	matid: material id of the cell
+	3.	area: area of the cell
+	4.	min_len: minimum length of each cell (CFL reference length for BASEMD)
+	5.	ins_rad: radius of the inscribed circle for each mesh (CFL reference length for BASEHPC)
+
+    The order of the columns is not importat, but the name do! Other additional columns can be present with any name, it will not be a problem. The only restriction is that the five columns above have the correct name.  
+	Colums can be obtained using QGIS, for a complete tutorial on how to get them see [Getting_fields_QGIS_tutotial](https://github.com/AmeGit01/Statistic_tool_for_BASEMENT_mesh/blob/main/docs/tutorial_getting_fields.md).
+
+2. ``MatIDfile.txt``: this file contains the list of the material IDs (matIDs) for which the user wants to plot statistics. It also allows the user to specify whether a logarithmic (base 10) scale should be used for the vertical axis of each subplot to improve the visualization of the Area and Characteristic Size distributions;
+
+3. ``BASEflow``: this argument specifies which BASEMENT model the user is using. Accepted values are ``BASEMD`` and ``BASEHPC``. If the mesh does not originate from the BASEMENT environment, select the option that matches the CFL condition described in the reference manual of the model of interest, or simply choose the most appropriate one according to the definitions given above.
+
+4.  ``FigureFormat``: this allows the user to specify the format of the output figures. Accepted values are ``png``, ``jpg``, ``pdf``, and ``svg``. Do **not** include the dot. For example, ``pdf`` is correct, while ``.pdf`` is not;
+
+## Outputs
+
+The tool produces three output files: two graphical outputs and one quantitative report.
+
+1. Area_input_file.FigureFormat: this plot shows the distribution of cell areas for each material ID selected in ``MatIDfile.txt``. The vertical lines represent the quantile values [0.1%, 1%, 5%, 10%], which are the default settings. These values can be customized within the script.
+
+2. Char_length_input_file.FigureFormat: this is analogous to the previous plot, but it considers the characteristic length used by the CFL condition. The same quantiles are displayed.
+
+3. Report_input_file.txt: this report provides, for both datasets and for each material ID, the number of cells below each quantile together with their cell IDs. This allows the user to easily identify the smallest cells and the potential computational bottlenecks.
+
+# Running the tool 
+
+## App version
 
 Into the folder ````apps```` are contained a list of zip file, which contains the app version of this tool, depending on the OS installed in the coputer. Using the app is very straightforward, it is enough to open a terminal on the folder where mesh_stats_tool is located, and type the expression based on the version. The available versions are:
 
@@ -18,8 +49,7 @@ Into the folder ````apps```` are contained a list of zip file, which contains th
 ./mesh_stats_tool/bin/mesh_stats input_file.csv MatIDfile.txt BASEflow FigureFormat 
 ````
  
-
-## Julia users
+## Script version
 
 No knowledge of the Julia programming language is required. Simply download the complete repository and use the tool. Everything the user needs is:
 - Julia installed (this tool was developed using Julia version 1.12.6). Refer to [Installing Julia](https://julialang.org/downloads/) if it is not already installed;
@@ -43,26 +73,6 @@ No knowledge of the Julia programming language is required. Simply download the 
 
 This tells Julia to look for a project and automatically activate it when one is found while launching ``julia`` from the terminal.  
 If you choose not to set **Optional**, remember to always type ``julia --project=@.`` instead of simply typing ``julia``.
-
-### Arguments
-
-The ``mesh_stats.jl`` Julia script requires the following arguments:
-
-1. ``input_file.csv``: this file contains the mesh information and must include the following columns:
-	1.	fid: cell id within the mesh
-	2.	matid: material id of the cell
-	3.	area: area of the cell
-	4.	min_len: minimum length of each cell (CFL reference length for BASEMD)
-	5.	ins_rad: radius of the inscribed circle for each mesh (CFL reference length for BASEHPC)
-
-    The order of the columns is not importat, but the name do! Other additional columns can be present with any name, it will not be a problem. The only restriction is that the five columns above have the correct name.  
-	Colums can be obtained using QGIS, for a complete tutorial on how to get them see [Getting_fields_QGIS_tutotial](https://github.com/AmeGit01/Statistic_tool_for_BASEMENT_mesh/blob/main/tutorial_getting_fields.md).
-
-2. ``MatIDfile.txt``: this file contains the list of the material IDs (matIDs) for which the user wants to plot statistics. It also allows the user to specify whether a logarithmic (base 10) scale should be used for the vertical axis of each subplot to improve the visualization of the Area and Characteristic Size distributions;
-
-3. ``BASEflow``: this argument specifies which BASEMENT model the user is using. Accepted values are ``BASEMD`` and ``BASEHPC``. If the mesh does not originate from the BASEMENT environment, select the option that matches the CFL condition described in the reference manual of the model of interest, or simply choose the most appropriate one according to the definitions given above.
-
-4.  ``FigureFormat``: this allows the user to specify the format of the output figures. Accepted values are ``png``, ``jpg``, ``pdf``, and ``svg``. Do **not** include the dot. For example, ``pdf`` is correct, while ``.pdf`` is not;
 
 ### Running mesh_stats.jl
 
@@ -111,16 +121,6 @@ julia source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC 
 If everything has been set up correctly, the terminal should display the following:
 
 ![terminal output](src/terminal_output.png)
-
-### Outputs
-
-The tool produces three output files: two graphical outputs and one quantitative report.
-
-1. Area_input_file.FigureFormat: this plot shows the distribution of cell areas for each material ID selected in ``MatIDfile.txt``. The vertical lines represent the quantile values [0.1%, 1%, 5%, 10%], which are the default settings. These values can be customized within the script.
-
-2. Char_length_input_file.FigureFormat: this is analogous to the previous plot, but it considers the characteristic length used by the CFL condition. The same quantiles are displayed.
-
-3. Report_input_file.txt: this report provides, for both datasets and for each material ID, the number of cells below each quantile together with their cell IDs. This allows the user to easily identify the smallest cells and the potential computational bottlenecks.
 
 ### Performance tips
 
