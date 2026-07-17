@@ -41,7 +41,7 @@ The ``mesh_stats.jl`` Julia script requires the following arguments:
 	5.	ins_rad: radius of the inscribed circle for each mesh (CFL reference length for BASEHPC)
 
     The order of the columns is not importat, but the name do! Other additional columns can be present with any name, it will not be a problem. The only restriction is that the five columns above have the correct name.  
-	Colums can be obtained using QGIS, for a complete tutorial on how to get them see 
+	Colums can be obtained using QGIS, for a complete tutorial on how to get them see [Getting_fields_QGIS_tutotial](https://github.com/AmeGit01/Statistic_tool_for_BASEMENT_mesh/blob/main/tutorial_getting_fields.md).
 
 2. ``MatIDfile.txt``: this file contains the list of the material IDs (matIDs) for which the user wants to plot statistics. It also allows the user to specify whether a logarithmic (base 10) scale should be used for the vertical axis of each subplot to improve the visualization of the Area and Characteristic Size distributions;
 
