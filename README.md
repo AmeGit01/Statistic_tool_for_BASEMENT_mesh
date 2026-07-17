@@ -45,9 +45,9 @@ The ``mesh_stats.jl`` Julia script requires the following arguments:
 
 2. ``MatIDfile.txt``: this file contains the list of the material IDs (matIDs) for which the user wants to plot statistics. It also allows the user to specify whether a logarithmic (base 10) scale should be used for the vertical axis of each subplot to improve the visualization of the Area and Characteristic Size distributions;
 
-3. ``FigureFormat``: this allows the user to specify the format of the output figures. Accepted values are ``png``, ``jpg``, ``pdf``, and ``svg``. Do **not** include the dot. For example, ``pdf`` is correct, while ``.pdf`` is not;
+3. ``BASEflow``: this argument specifies which BASEMENT model the user is using. Accepted values are ``BASEMD`` and ``BASEHPC``. If the mesh does not originate from the BASEMENT environment, select the option that matches the CFL condition described in the reference manual of the model of interest, or simply choose the most appropriate one according to the definitions given above.
 
-4. ``BASEflow``: this argument specifies which BASEMENT model the user is using. Accepted values are ``BASEMD`` and ``BASEHPC``. If the mesh does not originate from the BASEMENT environment, select the option that matches the CFL condition described in the reference manual of the model of interest, or simply choose the most appropriate one according to the definitions given above.
+4.  ``FigureFormat``: this allows the user to specify the format of the output figures. Accepted values are ``png``, ``jpg``, ``pdf``, and ``svg``. Do **not** include the dot. For example, ``pdf`` is correct, while ``.pdf`` is not;
 
 ## Running mesh_stats.jl
 
@@ -80,7 +80,7 @@ You can now follow the instructions below.
 
 Run the following command from the terminal:
 ````
-julia source/mesh_stats.jl input_file.csv MatIDfile.txt FigureFormat BASEflow
+julia source/mesh_stats.jl input_file.csv MatIDfile.txt BASEflow FigureFormat 
 ````
 
 Remember to replace the arguments with the appropriate values.
@@ -90,7 +90,7 @@ This example is already included in the repository.
 
 Run the following command:
 ````
-julia source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt png BASEHPC
+julia source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC png
 ````
 
 If everything has been set up correctly, the terminal should display the following:
@@ -118,7 +118,7 @@ julia --startup-file=no -e 'using DaemonMode; serve()'
 
 This command starts the server on which the script is executed. Then open a second terminal, navigate again to the repository, and run:
 ````
-julia --startup-file=no -e 'using DaemonMode; runargs()' source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt png BASEHPC
+julia --startup-file=no -e 'using DaemonMode; runargs()' source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC png 
 ````
 
 An even shorter command can be obtained by creating an alias. From the second terminal, run:
@@ -128,5 +128,5 @@ alias juliameshstats='julia --startup-file=no -e "using DaemonMode; runargs()" s
 
 Then the command becomes:
 ````
-juliameshstats inputs/test_mesh.csv inputs/test_regions.txt png BASEHPC
+juliameshstats inputs/test_mesh.csv inputs/test_regions.txt BASEHPC png 
 ````

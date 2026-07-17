@@ -94,8 +94,8 @@ function plot_stats(args)
 	# Read inputs
 	InputFile = args[1] 
 	RegionsFile = args[2]
-	OutputFormat = args[3]
-	BASEflow = args[4]
+	BASEflow = args[3]
+	OutputFormat = args[4]	
 	dosave = true
 	dodisplay = false
 	# =#
@@ -250,7 +250,7 @@ end
 
 #
 if length(ARGS) < 4
-	error("Select an input file typing: julia --project=@. source/mesh_stats.jl input_file.csv MatIDFile.txt FigureFormat BASEMD/BASEHPC \n")
+	error("Select an input file typing: julia --project=@. source/mesh_stats.jl input_file.csv MatIDFile.txt BASEMD/BASEHPC FigureFormat \n")
 end # =#
 
 plot_stats(Base.ARGS)
