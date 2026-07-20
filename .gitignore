@@ -35,3 +35,6 @@ JuliaLocalPreferences.toml
 
 # Ignore file during app development
 mesh_stats_tool/
+
+# Ignore command for creating apps
+app_command.txt
