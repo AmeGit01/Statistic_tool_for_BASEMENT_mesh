@@ -131,7 +131,7 @@ To use this feature, open a terminal, navigate to the repository, and run the co
 julia --startup-file=no -e 'using DaemonMode; serve()'
 ````
 
-This command starts the server on which the script is executed. Then open a second terminal, navigate again to the repository, and run:
+This command starts the server on which the script is executed. Then open a second terminal, navigate again to the repository, and run --- :
 ````
 julia --startup-file=no -e 'using DaemonMode; runargs()' source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC png 
 ````
