@@ -1,3 +1,5 @@
+#!/usr/bin/env julia
+
 using Printf, Plots, Plots.Measures, DelimitedFiles
 using StatsPlots, Statistics, StatsBase
 using OrderedCollections, Colors
@@ -222,19 +224,19 @@ function compute_stats(args)
 	return 
 end
 
-#= use:
+# use:
 # push!(ARGS, "inputs/test_mesh.csv", "inputs/test_regions.txt", "BASEHPC", "png")
 if length(Base.ARGS) < 4
 	error("Select an input file typing: julia src/mesh_stats.jl inputs/InputFile.csv inputs/RegionsFile.txt BASEMD/BASEHPC FigureFormat \n")
 end # =#
 
-# use:
+#= use:
 # push!(ARGS, "inputs/test_mesh.csv", "inputs/test_regions.txt", "BASEHPC", "png")
 if length(Base.ARGS) < 2
 	error("Missing argumens \n")
 end # =#
 
 
-compute_stats(Base.ARGS)
+# compute_stats(Base.ARGS)
 
-# plot_stats(Base.ARGS)
+plot_stats(Base.ARGS)

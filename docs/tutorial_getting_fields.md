@@ -21,7 +21,7 @@ $area
 ````
 
 ## 4. min_len
-- Output field name: min_lenb
+- Output field name: min_len
 - Output field type: real
 - Expression:
 ````

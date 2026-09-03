@@ -236,12 +236,12 @@ function plot_stats(args)
 	@printf("\nBuilding characteristic length distribution plots... \n")
 	if BASEflow == "BASEMD"
 		chrsize = data[:,positions[4]]
-		title = "Minimum cell size - $(FileName)"
-		xlabel = "edge length [m]"
+		title = "Lato minore della cella - $(FileName)"
+		xlabel = "lunghezza [m]"
 	elseif BASEflow == "BASEHPC"
 		chrsize = data[:, positions[5]]
-		title = "Inscribed circle's radius - $(FileName)"
-		xlabel = "radius [m]"
+		title = "Raggio del cerchio inscritto - $(FileName)"
+		xlabel = "raggio [m]"
 	else
 		error("BASEflow not defined, select BASEMD or BASEHPC")
 	end
