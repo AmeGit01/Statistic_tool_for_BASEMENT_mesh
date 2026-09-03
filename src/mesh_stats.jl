@@ -26,16 +26,6 @@ function plot_stats(args)
 	dodisplay = true
 	# =#
 
-	#=		
-	Idea: make the order of the coluns useless, but the name.
-	Names to be used (all small letters):
-	- [1]: fid
-	- [2]: matid
-	- [4]: area
-	- [5]: min_len
-	- [10]: ins_rad
-	=#
-
 	# read files and set-up outputs names
 	@printf("Reading input file: %s \n", InputFile)
 	data, fields = readdlm(InputFile, ',', header=true) # '\t'
@@ -47,9 +37,11 @@ function plot_stats(args)
 	last = collect(findlast(".", FileName))
 	FileNameNoFormat = FileName[begin:last[begin]-1]	
 
-	UseRegionsFile, fields_FegionsFile = readdlm(RegionsFile, ',', header=true)
+	UseRegionsFile, fields_RegionsFile = readdlm(RegionsFile, ',', header=true)
 	UseRegions = Int64.(UseRegionsFile[:, 1])
 	ylogScale = Bool.(UseRegionsFile[:, 2])
+	RegionNames = String.(UseRegionsFile[:, 3])
+	RegionNames = chop.(RegionNames, head=1, tail=0)
 
 	ReportFileName = "reports/Report_$(FileNameNoFormat).txt"
 	# ReportFileName = "reports/report_PROVA.txt"
@@ -81,6 +73,23 @@ function plot_stats(args)
 
 	materials_all = Dict( i => findall(==(i), material_id) for i ∈ unique(material_id) )
 
+	# Check the selected regions are actually stored in the csv file
+	flag = false
+	MissingRegions = Int64[]
+	for i ∈ UseRegions
+		if !haskey(materials_all, i)
+			@printf("matid %d is selected but not found in the input file.\n", i)
+			flag = true
+			push!(MissingRegions, i)
+		end
+	end
+	if flag
+		# @printf("The regions with matid %s are missing in the input file.\nThe only available matids are: %s\n", join(MissingRegions, ", "), join(unique(material_id), ", "))
+		@printf("The only available matids are: %s\n", join(sort(unique(material_id)), ", "))
+		return
+	end
+
+	# Select the desired regions
 	materials = OrderedDict(i => materials_all[i] for i in UseRegions)
 
 
@@ -109,7 +118,7 @@ function plot_stats(args)
 	quantiles_intervals[:, 1] .= [0.001, 0.01, 0.05, 0.1]	# USED DEFINED, ACCORDIG TO nquantiles
 
 	for i ∈ 1:nID
-		plt_tmp, q1 = mdl.plot_histogram(area, materials, title, xlabel, quantiles_intervals[:, 1], i, UseRegions, colors[i], ylogScale; quantiles_flag = true)
+		plt_tmp, q1 = mdl.plot_histogram(area, materials, title, xlabel, quantiles_intervals[:, 1], i, UseRegions, colors[i], ylogScale, RegionNames; quantiles_flag = true)
 		plts[i, 1] = plt_tmp
 		quantiles[:, i, 1] = q1
 	end
@@ -144,7 +153,7 @@ function plot_stats(args)
 	quantiles_intervals[:, 2] = [0.001, 0.01, 0.05, 0.1]	# USED DEFINED, ACCORDIG TO nquantiles	
 
 	for i ∈ 1:nID
-		plt_tmp, q2 = mdl.plot_histogram(chrsize, materials, title, xlabel, quantiles_intervals[:, 2], i, UseRegions, colors[i], ylogScale; quantiles_flag = true)
+		plt_tmp, q2 = mdl.plot_histogram(chrsize, materials, title, xlabel, quantiles_intervals[:, 2], i, UseRegions, colors[i], ylogScale, RegionNames; quantiles_flag = true)
 		plts[i, 2] = plt_tmp
 		quantiles[:, i, 2] = q2
 		# @show q1
@@ -160,14 +169,72 @@ function plot_stats(args)
 	dosave && @printf("Characteristic length plot saved to file %s\n", OutputName)
 
 	# build the report
-	dosave && mdl.write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize)
+	dosave && mdl.write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize, RegionNames)
 
 	return nothing
 end
 
-#
+function compute_stats(args)
+	ElementFile = args[1]
+	NodeFile = args[2]
+	BASEflow = args[3] 
+	Outputformat = ".csv"
+	dosave = true
+	dodisplay = false
+
+	# read files and set-up outputs names
+	@printf("Reading element file: %s \n", ElementFile)
+	ele, fields = readdlm(ElementFile, header=true) # , '\t')
+	# elememnts contains: fid, node1, node2, node3, matid
+	eleID = ele[:, 1]
+	Nele = length(eleID)-1
+
+
+	# Extract FileName
+	last = collect(findlast("/", ElementFile))
+	FileName = ElementFile[last[begin]+1:end]
+	last = collect(findlast(".", FileName))
+	FileNameNoFormat = FileName[begin:last[begin]-1]	
+
+	@printf("Reading element file: %s \n", NodeFile)
+	nod, fields = readdlm(NodeFile, header=true) # , '\t')
+	nodID = nod[:, 1]
+	Nnod = length(nodID)-1
+
+	open("inputs/ID.sol", "w") do io
+
+		write(io, "DATASET\n")
+        write(io, "OBJTYPE \"mesh2d\"\n")
+		write(io, "RT_JU8LIAN 2433282.500000\n")
+		write(io, "BEGSCL\n")
+        write(io, "ND $Nnod\n")
+        write(io, "NC $Nele\n")
+        write(io, "NAME \"ID\"\n")
+		write(io, "TIMEUNITS seconds\n")
+        write(io, "TS 0 0.0\n")
+        # write(io, "CC\n") # Dati legati alle facce
+
+		for n ∈ 1:Nele
+			write(io, Float64(eleID[n]))
+		end
+	end
+
+	return 
+end
+
+#= use:
+# push!(ARGS, "inputs/test_mesh.csv", "inputs/test_regions.txt", "BASEHPC", "png")
 if length(Base.ARGS) < 4
 	error("Select an input file typing: julia src/mesh_stats.jl inputs/InputFile.csv inputs/RegionsFile.txt BASEMD/BASEHPC FigureFormat \n")
 end # =#
 
-plot_stats(Base.ARGS)
+# use:
+# push!(ARGS, "inputs/test_mesh.csv", "inputs/test_regions.txt", "BASEHPC", "png")
+if length(Base.ARGS) < 2
+	error("Missing argumens \n")
+end # =#
+
+
+compute_stats(Base.ARGS)
+
+# plot_stats(Base.ARGS)

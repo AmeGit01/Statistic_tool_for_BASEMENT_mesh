@@ -94,10 +94,32 @@ The REPL has the following layout:
 
 Then enter package mode by pressing the ``]`` key and run:
 ````
-instantiate()
+instantiate
 ````
 
-A ``Manifest.toml`` file should now be created in the project folder. This file is generated from the ``Project.toml`` file, which is already included in the repository.
+or equivalently:
+
+````
+using Pkg
+Pkg.instantiate()
+````
+
+
+A ``Manifest.toml`` file should now be created in the project folder. This file is generated from the ``Project.toml`` file, which is already included in the repository.  
+
+In case the command ````instantiate```` is not running, try:
+
+````
+update
+```` 
+or equivalently:
+
+````
+using Pkg
+Pkg.update()
+````
+
+first, and then ````instantiate````.
 
 You can now follow the instructions below.
 
@@ -105,7 +127,7 @@ You can now follow the instructions below.
 
 Run the following command from the terminal:
 ````
-julia source/mesh_stats.jl input_file.csv MatIDfile.txt BASEflow FigureFormat 
+julia src/mesh_stats.jl input_file.csv MatIDfile.txt BASEflow FigureFormat 
 ````
 
 Remember to replace the arguments with the appropriate values.
@@ -115,7 +137,7 @@ This example is already included in the repository.
 
 Run the following command:
 ````
-julia source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC png
+julia src/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC png
 ````
 
 If everything has been set up correctly, the terminal should display the following:
@@ -133,12 +155,12 @@ julia --startup-file=no -e 'using DaemonMode; serve()'
 
 This command starts the server on which the script is executed. Then open a second terminal, navigate again to the repository, and run --- :
 ````
-julia --startup-file=no -e 'using DaemonMode; runargs()' source/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC png 
+julia --startup-file=no -e 'using DaemonMode; runargs()' src/mesh_stats.jl inputs/test_mesh.csv inputs/test_regions.txt BASEHPC png 
 ````
 
 An even shorter command can be obtained by creating an alias. From the second terminal, run:
 ````
-alias juliameshstats='julia --startup-file=no -e "using DaemonMode; runargs()" source/mesh_stats.jl'
+alias juliameshstats='julia --startup-file=no -e "using DaemonMode; runargs()" src/mesh_stats.jl'
 ````
 
 Then the command becomes:

@@ -1,0 +1,5 @@
+# 
+1, 0, canale
+2, 0, sponda
+3, 0, allargameno
+4, 0, flood plane

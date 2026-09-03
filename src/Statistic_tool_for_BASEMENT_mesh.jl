@@ -4,9 +4,9 @@ using Printf, Plots, Plots.Measures, DelimitedFiles
 using StatsPlots, Statistics, StatsBase
 using OrderedCollections, Colors
 
-# module Statistic_tool_for_BASEMENT_mesh
 
-function plot_histogram(data, materials, title, xlabel, quantile_intervals, i, matIDs, color, ylogScale; quantiles_flag = false)
+
+function plot_histogram(data, materials, title, xlabel, quantile_intervals, i, matIDs, color, ylogScale, RegionNames; quantiles_flag = false)
 
 	quantiles1 = 0
 	qlabel1 = string(quantile_intervals[1]*100); qlabel1 = qlabel1 * "%"
@@ -29,7 +29,7 @@ function plot_histogram(data, materials, title, xlabel, quantile_intervals, i, m
 		xticks=xticks,
 		yscale = ylogScale[i] ? :log10 : :identity
 	)
-	@printf("    minimum data at matID %d is %.4f \n", matIDs[i], minimum(data[materials[matIDs[i]]]))
+	@printf("    minimum data at matID %d (%s) is %.4f \n", matIDs[i], RegionNames[i], minimum(data[materials[matIDs[i]]]))
 	if i == 1
 		splt11 = plot!(splt11; title=title)
 	end
@@ -45,7 +45,7 @@ function plot_histogram(data, materials, title, xlabel, quantile_intervals, i, m
 	return splt11, quantiles1
 end
 
-function write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, matIDs, area, chrsize)
+function write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, matIDs, area, chrsize, RegionNames)
 
 	open(ReportFileName, "w") do io
 		println(io, "QUANTILE REPORT for $(FileName)")
@@ -66,7 +66,7 @@ function write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_i
 		for j ∈ 1:2		# loop over the variables' name
 			for n ∈ 1:nID		# loop over the matIDs
 
-				println(io, "\n$(Names[j]), matID $(matIDs[n])")
+				println(io, "\n$(Names[j]), matID $(matIDs[n]) ($(RegionNames[n]))")
 				
 				# quantiles[:, n, j]:  quantiles_intervals[:, j], matIDs[n], Names[j]
 				# q_percentage = quantiles_intervals[:, j] * 100		# ex. [0.1, 1.0, 5.0, 10.0]
@@ -132,13 +132,14 @@ function plot_stats(args)
 	# Extract FileName
 	last = collect(findlast("/", InputFile))
 	FileName = InputFile[last[begin]+1:end]
-
 	last = collect(findlast(".", FileName))
 	FileNameNoFormat = FileName[begin:last[begin]-1]	
 
 	UseRegionsFile, fields_FegionsFile = readdlm(RegionsFile, ',', header=true)
 	UseRegions = Int64.(UseRegionsFile[:, 1])
 	ylogScale = Bool.(UseRegionsFile[:, 2])
+	RegionNames = String.(UseRegionsFile[:, 3])
+	RegionNames = chop.(RegionNames, head=1, tail=0)
 
 	ReportFileName = "reports/Report_$(FileNameNoFormat).txt"
 	# ReportFileName = "reports/report_PROVA.txt"
@@ -168,7 +169,24 @@ function plot_stats(args)
 	material_id .= data[:,positions[2]]
 
 	materials_all = Dict( i => findall(==(i), material_id) for i ∈ unique(material_id) )
+	
+	# Check the selected regions are actually stored in the csv file
+	flag = false
+	MissingRegions = Int64[]
+	for i ∈ UseRegions
+		if !haskey(materials_all, i)
+			@printf("matid %d is selected but not found in the input file.\n", i)
+			flag = true
+			push!(MissingRegions, i)
+		end
+	end
+	if flag
+		# @printf("The regions with matid %s are missing in the input file.\nThe only available matids are: %s\n", join(MissingRegions, ", "), join(unique(material_id), ", "))
+		@printf("The only available matids are: %s\n", join(sort(unique(material_id)), ", "))
+		return
+	end
 
+	# Select the desired regions
 	materials = OrderedDict(i => materials_all[i] for i in UseRegions)
 
 
@@ -197,7 +215,7 @@ function plot_stats(args)
 	quantiles_intervals[:, 1] .= [0.001, 0.01, 0.05, 0.1]	# USED DEFINED, ACCORDIG TO nquantiles
 
 	for i ∈ 1:nID
-		plt_tmp, q1 = plot_histogram(area, materials, title, xlabel, quantiles_intervals[:, 1], i, UseRegions, colors[i], ylogScale; quantiles_flag = true)
+		plt_tmp, q1 = plot_histogram(area, materials, title, xlabel, quantiles_intervals[:, 1], i, UseRegions, colors[i], ylogScale, RegionNames; quantiles_flag = true)
 		plts[i, 1] = plt_tmp
 		quantiles[:, i, 1] = q1
 	end
@@ -232,7 +250,7 @@ function plot_stats(args)
 	quantiles_intervals[:, 2] = [0.001, 0.01, 0.05, 0.1]	# USED DEFINED, ACCORDIG TO nquantiles	
 
 	for i ∈ 1:nID
-		plt_tmp, q2 = plot_histogram(chrsize, materials, title, xlabel, quantiles_intervals[:, 2], i, UseRegions, colors[i], ylogScale; quantiles_flag = true)
+		plt_tmp, q2 = plot_histogram(chrsize, materials, title, xlabel, quantiles_intervals[:, 2], i, UseRegions, colors[i], ylogScale, RegionNames; quantiles_flag = true)
 		plts[i, 2] = plt_tmp
 		quantiles[:, i, 2] = q2
 		# @show q1
@@ -248,7 +266,7 @@ function plot_stats(args)
 	dosave && @printf("Characteristic length plot saved to file %s\n", OutputName)
 
 	# build the report
-	dosave && write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize)
+	dosave && write_report(ReportFileName, FileName, BASEflow, quantiles, quantiles_intervals, materials, UseRegions, area, chrsize, RegionNames)
 
 	return nothing
 end

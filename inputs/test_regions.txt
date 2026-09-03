@@ -1,4 +1,4 @@
-matID, y_log_scale
-6, 0
-13, 1
-30, 0
+matID, y_log_scale, name
+6, 0, Material_1
+13, 1, Material_2
+30, 0, Material_3
